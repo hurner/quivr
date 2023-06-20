@@ -138,6 +138,9 @@ def get_chat_name_from_first_question(chat_message: ChatMessage):
 def get_answer(commons: CommonsDep,  chat_message: ChatMessage, email: str, user_openai_api_key:str):
     qa = get_qa_llm(chat_message, email, user_openai_api_key)
 
+    logger.info("get_answer")
+
+    logger.info(f"chat_message {chat_message}")
     if chat_message.use_summarization:
         # 1. get summaries from the vector store based on question
         summaries = similarity_search(
@@ -155,16 +158,19 @@ def get_answer(commons: CommonsDep,  chat_message: ChatMessage, email: str, user
             ) + '\n'
         model_response = qa(
             {"question": additional_context + chat_message.question})
+        logger.info(f"model_response-use_summarization {model_response}")
     else:
         model_response = qa({"question": chat_message.question})
+		
+        logger.info(f"model_response-else {model_response}")
 
-    answer = model_response['answer']   
+    answer = model_response['answer']
 
     # append sources (file_name) to answer
-    if "source_documents" in answer:
-        # logger.debug('Source Documents: %s', answer["source_documents"])
+    if "source_documents" in model_response:
+        logger.info('Source Documents: %s', model_response["source_documents"])
         sources = [
-            doc.metadata["file_name"] for doc in answer["source_documents"]
+            doc.metadata["file_name"] for doc in model_response["source_documents"]
             if "file_name" in doc.metadata]
         # logger.debug('Sources: %s', sources)
         if sources:
@@ -173,4 +179,7 @@ def get_answer(commons: CommonsDep,  chat_message: ChatMessage, email: str, user
             # files = [f"[{f}](/explore/{f})" for f in files]
             answer = answer + "\n\nRef: " + "; ".join(files)
 
+    logger.info("get_answer2")
+
+    logger.info(f"get_answer {answer}")
     return answer
